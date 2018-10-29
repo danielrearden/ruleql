@@ -1,0 +1,21 @@
+{
+    "defaultSeverity": "error",
+    "extends": [
+        "tslint:recommended"
+    ],
+    "jsRules": {},
+    "rules": {
+      "quotemark": [true, "single", "avoid-escape", "avoid-template"],
+      "semicolon": [true, "never"],
+      "space-before-function-paren": [true, "always"],
+      "interface-name": false,
+      "ordered-imports": [
+        true,
+        {
+          "import-sources-order": "lowercase-first",
+          "named-imports-order": "lowercase-first"
+        }
+      ]
+    },
+    "rulesDirectory": []
+}
