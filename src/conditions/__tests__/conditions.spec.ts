@@ -60,7 +60,7 @@ describe('Conditions', () => {
     })
   })
 
-  describe('add', async () => {
+  describe('always', async () => {
     assertExecutes(true, `
       always
     `)
@@ -76,6 +76,12 @@ describe('Conditions', () => {
     assertExecutes(true, `
       closeTo(path:"someFloat", value: ${context.someFloat + 0.1}, precision: 0)
     `)
+    assertExecutes(true, `
+      closeTo(path:"someFloat", valuePath: "someFloat", precision: 0)
+    `)
+    assertRejects(`
+      closeTo(path:"someFloat", value: ${context.someFloat + 0.001}, valuePath: "someFloat", precision: 0)
+    `)
   })
 
   describe('equalsNumber', async () => {
@@ -84,6 +90,12 @@ describe('Conditions', () => {
     `)
     assertExecutes(false, `
       equalsNumber(path:"someInt", value: ${context.someInt - 1})
+    `)
+    assertExecutes(true, `
+      equalsNumber(path:"someInt", valuePath: "someInt")
+    `)
+    assertRejects(`
+      closeTo(path:"someFloat", value: ${context.someFloat + 0.001}, valuePath: "someFloat", precision: 0)
     `)
   })
 
@@ -97,9 +109,11 @@ describe('Conditions', () => {
     assertExecutes(false, `
       equalsObject(path:"someParentObject.someObject", value: "${escapedJSON}")
     `)
-
+    assertExecutes(true, `
+      equalsObject(path:"someParentObject.someObject", valuePath: "someParentObject.someObject")
+    `)
     assertRejects(`
-    equalsObject(path:"someParentObject.someObject", value: "foo: 5")
+      equalsObject(path:"someParentObject", value: "${'""'}", valuePath: "someParentObject")
     `)
   })
 
@@ -110,6 +124,12 @@ describe('Conditions', () => {
     assertExecutes(false, `
       greaterThan(path:"someFloat", value: ${context.someFloat})
     `)
+    assertExecutes(false, `
+      greaterThan(path:"someFloat", valuePath: "someFloat")
+    `)
+    assertRejects(`
+      greaterThan(path:"someFloat", value: ${context.someFloat}, valuePath: "someFloat")
+    `)
   })
 
   describe('greaterThanOrEqual', async () => {
@@ -119,6 +139,12 @@ describe('Conditions', () => {
     assertExecutes(false, `
       greaterThanOrEqual(path:"someFloat", value: ${context.someFloat + 1})
     `)
+    assertExecutes(true, `
+      greaterThanOrEqual(path:"someFloat", valuePath: "someFloat")
+    `)
+    assertRejects(`
+      greaterThanOrEqual(path:"someFloat", value: ${context.someFloat}, valuePath: "someFloat")
+    `)
   })
 
   describe('includesFloat', async () => {
@@ -127,6 +153,16 @@ describe('Conditions', () => {
     `)
     assertExecutes(false, `
       includesFloat(path:"someParentObject.someNumberArray", value: ${context.someParentObject.someNumberArray[0] + 1})
+    `)
+    assertExecutes(true, `
+      includesFloat(path:"someParentObject.someNumberArray", valuePath: "someParentObject.someNumberArray[0]")
+    `)
+    assertRejects(`
+      includesFloat(
+        path:"someParentObject.someNumberArray",
+        valuePath: "someParentObject.someNumberArray[0]",
+        value: ${context.someParentObject.someNumberArray[0]}
+      )
     `)
   })
 
@@ -139,6 +175,10 @@ describe('Conditions', () => {
     escapedJSON = JSON.stringify(wrongObject).replace(/"/g, '\\"')
     assertExecutes(false, `
       includesObject(path:"someParentObject.someObjectArray", value: "${escapedJSON}")
+    `)
+
+    assertExecutes(true, `
+      includesObject(path:"someParentObject.someObjectArray", valuePath: "someParentObject.someObjectArray[0]")
     `)
 
     assertRejects(`
@@ -154,6 +194,9 @@ describe('Conditions', () => {
       includesString(path:"someParentObject.someStringArray", value: "${
         context.someParentObject.someStringArray[0] + 'a'
       }")
+    `)
+    assertExecutes(true, `
+      includesString(path:"someParentObject.someStringArray", valuePath: "someParentObject.someStringArray[0]")
     `)
   })
 
@@ -224,6 +267,12 @@ describe('Conditions', () => {
     assertExecutes(false, `
       lessThan(path:"someFloat", value: ${context.someFloat})
     `)
+    assertExecutes(false, `
+      lessThan(path:"someFloat", valuePath: "someFloat")
+    `)
+    assertRejects(`
+      lessThan(path:"someFloat", valuePath: "someFloat", value: ${context.someFloat})
+    `)
   })
 
   describe('lessThanOrEqual', async () => {
@@ -233,11 +282,11 @@ describe('Conditions', () => {
     assertExecutes(false, `
       lessThanOrEqual(path:"someFloat", value: ${context.someFloat - 1})
     `)
-  })
-
-  describe('never', async () => {
-    assertExecutes(false, `
-      never
+    assertExecutes(true, `
+      lessThanOrEqual(path:"someFloat", valuePath: "someFloat")
+    `)
+    assertRejects(`
+      lessThanOrEqual(path:"someFloat", valuePath: "someFloat", value: ${context.someFloat})
     `)
   })
 
@@ -266,6 +315,18 @@ describe('Conditions', () => {
       matchesObject(path:"someParentObject.someObject", value: "${escapedJSON}")
     `)
 
+    assertExecutes(true, `
+      matchesObject(path:"someParentObject.someObject", valuePath: "someParentObject.someObject")
+    `)
+
+    assertRejects(`
+      matchesObject(
+        path:"someParentObject.someObject",
+        valuePath: "someParentObject.someObject",
+        value: "${escapedJSON}"
+      )
+    `)
+
     assertRejects(`
       matchesObject(path:"someParentObject.someObject", value: "foo: 5")
     `)
@@ -280,6 +341,18 @@ describe('Conditions', () => {
     `)
     assertExecutes(false, `
       matchesRegex(path: "someString", value:"${context.someString + 'a'}")
+    `)
+    assertExecutes(true, `
+      matchesRegex(path: "someString", valuePath:"someString")
+    `)
+    assertRejects(`
+      matchesRegex(path: "someString", valuePath:"someString", value:"${context.someString}")
+    `)
+  })
+
+  describe('never', async () => {
+    assertExecutes(false, `
+      never
     `)
   })
 })
