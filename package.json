@@ -17,7 +17,8 @@
   "scripts": {
     "lint": "tslint src/**/*.ts",
     "test": "jest",
-    "build": "tsc"
+    "build": "tsc",
+    "prepublish": "tsc"
   },
   "dependencies": {
     "dataloader": "^1.4.0",
