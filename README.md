@@ -50,7 +50,7 @@ ruleEngine.processRules(rules, context).then(() => {
 })
 ```
 
-The default sets of conditions and effects are documented in their respective files, which can be found [here](src/conditions/conditions) and [here](src/effects/effects).
+The default sets of conditions and effects are documented in their respective files, which can be found [here](src/conditions/conditions.ts) and [here](src/effects/effects.ts).
 
 ## Configuration
 

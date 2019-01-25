@@ -12,7 +12,7 @@ import {
 } from 'graphql'
 import { getFieldDef } from 'graphql/execution/execute'
 import { getArgumentValues } from 'graphql/execution/values'
-import * as customTypes from './custom-types'
+import scalars from './scalars'
 import { validationRules } from './validation-rules'
 
 export interface BaseExecutorResolverMap {
@@ -146,11 +146,11 @@ export default abstract class BaseExecutor {
     schemaBuilder: SchemaBuilderFunc,
   ): GraphQLSchema => {
     const baseSchema = schemaBuilder(fields)
-    const customTypeNames = Object.keys(customTypes)
+    const scalarNames = Object.keys(scalars)
     const typeDefs = `
-    ${customTypeNames.map((typeName) => `
+    ${scalarNames.map((typeName) => `
     scalar ${typeName}
-    `)}
+    `).join('')}
 
     ${baseSchema}
 
@@ -160,9 +160,9 @@ export default abstract class BaseExecutor {
 
     // Note: We're just assigning each custom type to the schema's private _typeMap property.
     // The alternative here would be to recreate the schema like graphql-tools does.
-    customTypeNames.forEach((typeName) => {
+    scalarNames.forEach((typeName) => {
       // tslint:disable-next-line:no-string-literal
-      Object.assign(schema['_typeMap'][typeName], customTypes[typeName])
+      Object.assign(schema['_typeMap'][typeName], scalars[typeName])
     })
 
     assertValidSchema(schema)
