@@ -8,7 +8,8 @@ describe('ConditionExecutor', () => {
       const effects = `{
         add(path: "count", value: 7)
       }`
-      await executor.executeAll([effects], context)
+      const rule = { effects, conditions: '' }
+      await executor.executeAll([rule], context)
       expect(context).toHaveProperty('count', 7)
     })
   })
@@ -17,16 +18,40 @@ describe('ConditionExecutor', () => {
     it('should execute multiple sets of effects sequentially', async () => {
       const executor = new EffectExecutor()
       const context = { count: 7 }
-      const effectSet = [
-        `{
-          add(path: "count", value: 4)
-        }`,
-        `{
-          multiply(path: "count", value: 3)
-        }`,
+      const rules = [
+        {
+          conditions: '',
+          effects: `{
+            add(path: "count", value: 4)
+          }`,
+        },
+        {
+          conditions: '',
+          effects: `{
+            multiply(path: "count", value: 3)
+          }`,
+        },
       ]
-      await executor.executeAll(effectSet, context)
+      await executor.executeAll(rules, context)
       expect(context).toHaveProperty('count', 33)
+    })
+  })
+
+  describe('context', () => {
+    it('should have access to rule data in execution context', async () => {
+      const executor = new EffectExecutor()
+      const context = {}
+      const rules = [
+        {
+          bar: 'BAR',
+          conditions: '',
+          effects: `{
+            concat(path: "foo", valuePath: "rule.bar")
+          }`,
+        },
+      ]
+      await executor.executeAll(rules, context)
+      expect(context).toHaveProperty('foo', ['BAR'])
     })
   })
 })

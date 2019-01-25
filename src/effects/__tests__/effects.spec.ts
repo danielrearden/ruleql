@@ -2,11 +2,12 @@ import { Chance } from 'chance'
 import { isEqual, trim } from 'lodash'
 
 import { getFieldNamesFromSource } from '../../graphql/utils'
+import { ExecutionContext } from '../../rule-engine/rules'
 import EffectExecutor from '../effect-executor'
 import { defaultEffectFields, defaultEffectResolvers } from '../effects'
 
 const chance = new Chance()
-const context: any = {
+const context: ExecutionContext = {
   alwaysNull: null,
   alwaysTrue: true,
   alwaysUndefined: undefined,
@@ -27,6 +28,10 @@ const context: any = {
       someOtherField: chance.integer({ min: 1, max: 100 }),
     },
   ],
+  someOtherObject: {
+    someOtherField: chance.word(),
+    someOtherOtherField: chance.integer({ min: 1, max: 100 }),
+  },
   someString: chance.word(),
   someStringArray: [chance.string(), chance.string()],
 }
@@ -36,7 +41,8 @@ function assertExecutes (expected: object, field: string) {
     const executor = new EffectExecutor()
     const ctx = Object.assign({}, context)
     const query = `{ ${field} }`
-    await executor.executeAll([query], ctx)
+    const rule = { effects: query, conditions: '' }
+    await executor.executeAll([rule], ctx)
     expect(ctx).toMatchObject(expected)
   })
 }
@@ -46,7 +52,8 @@ function assertRejects (field: string) {
     const executor = new EffectExecutor()
     const ctx = Object.assign({}, context)
     const query = `{ ${field} }`
-    await expect(executor.executeAll([query], ctx)).rejects.toBeDefined()
+    const rule = { effects: query, conditions: '' }
+    await expect(executor.executeAll([rule], ctx)).rejects.toBeDefined()
   })
 }
 
@@ -67,8 +74,16 @@ describe('Effects', () => {
       add(path:"someInt", value: ${int})
     `)
 
+    assertExecutes({ someInt: context.someInt + context.someInt }, `
+      add(path:"someInt", valuePath: "someInt")
+    `)
+
     assertRejects(`
       add(path:"someString", value: ${int})
+    `)
+
+    assertRejects(`
+      add(path:"someString", value: ${int}, valuePath: "someInt")
     `)
   })
 
@@ -112,6 +127,10 @@ describe('Effects', () => {
       concat(path:"someNumberArray", value: "${int}")
     `)
 
+    assertExecutes({ someNumberArray: context.someNumberArray.concat(context.someNumberArray) }, `
+      concat(path:"someNumberArray", valuePath: "someNumberArray")
+    `)
+
     const obj = { [chance.word()]: chance.word() }
     const objJSON = JSON.stringify(obj).replace(/"/g, '\\"')
     assertExecutes({ someObjectArray: context.someObjectArray.concat(obj) }, `
@@ -125,6 +144,10 @@ describe('Effects', () => {
 
     assertRejects(`
       concat(path:"someStringArray", value: "foo: 10")
+    `)
+
+    assertRejects(`
+      concat(path:"someObjectArray", value: "${objJSON}", valuePath: "someObjectArray")
     `)
   })
 
@@ -147,6 +170,10 @@ describe('Effects', () => {
     const int = chance.integer({min: 1, max: 100})
     assertExecutes({ someInt: context.someInt / int }, `
       divide(path:"someInt", value: ${int})
+    `)
+
+    assertExecutes({ someInt: context.someInt / context.someInt }, `
+      divide(path:"someInt", valuePath: "someInt")
     `)
 
     assertRejects(`
@@ -178,6 +205,11 @@ describe('Effects', () => {
       filter(path:"someNumberArray", value: "${num}")
     `)
 
+    expected = context.someNumberArray.filter((o) => isEqual(o, context.someNumberArray[0]))
+    assertExecutes({ someNumberArray: expected }, `
+      filter(path:"someNumberArray", valuePath: "someNumberArray[0]")
+    `)
+
     obj = { [chance.word()]: chance.word() }
     objJSON = JSON.stringify(obj).replace(/"/g, '\\"')
     assertExecutes(context, `
@@ -185,7 +217,11 @@ describe('Effects', () => {
     `)
 
     assertRejects(`
-    filter(path:"someNumberArray", value: "foo: 0")
+      filter(path:"someNumberArray", value: "foo: 0")
+    `)
+
+    assertRejects(`
+      filter(path:"someNumberArray", value: ${context.someNumberArray[0]}, valuePath: "someNumberArray[0]")
     `)
   })
 
@@ -210,6 +246,14 @@ describe('Effects', () => {
       max(path:"someFloat", value: ${num})
     `)
 
+    assertExecutes({ someFloat: Math.max(context.someFloat, context.someInt) }, `
+      max(path:"someFloat", valuePath: "someInt")
+    `)
+
+    assertRejects(`
+      max(path:"someFloat", value: 1, valuePath: "someInt")
+    `)
+
     assertRejects(`
       max(path:"someString")
     `)
@@ -220,6 +264,10 @@ describe('Effects', () => {
     const objJSON = JSON.stringify(obj).replace(/"/g, '\\"')
     assertExecutes({ someObject: Object.assign({}, context.someObject, obj) }, `
       merge(path:"someObject", value: "${objJSON}")
+    `)
+
+    assertExecutes({ someObject: Object.assign({}, context.someObject, context.someOtherObject) }, `
+      merge(path:"someObject", valuePath: "someOtherObject")
     `)
 
     assertExecutes({ alwaysUndefined: obj }, `
@@ -249,6 +297,10 @@ describe('Effects', () => {
       min(path:"someFloat", value: ${num})
     `)
 
+    assertExecutes({ someFloat: Math.min(context.someFloat, context.someInt) }, `
+      min(path:"someFloat", valuePath: "someInt")
+    `)
+
     num = context.someFloat + chance.integer({min: 1, max: 100})
     assertExecutes(context, `
       min(path:"someFloat", value: ${num})
@@ -256,6 +308,10 @@ describe('Effects', () => {
 
     assertRejects(`
       min(path:"someString")
+    `)
+
+    assertRejects(`
+      min(path:"someFloat", value: 2, valuePath:"someInt")
     `)
   })
 
@@ -265,8 +321,16 @@ describe('Effects', () => {
       multiply(path:"someInt", value: ${int})
     `)
 
+    assertExecutes({ someInt: context.someInt * context.someInt }, `
+      multiply(path:"someInt", valuePath:"someInt")
+    `)
+
     assertRejects(`
-      divide(path:"someString", value: ${int})
+      multiply(path:"someString", value: ${int})
+    `)
+
+    assertRejects(`
+      multiply(path:"someInt", value: 3, valuePath:"someInt")
     `)
   })
 
@@ -284,10 +348,9 @@ describe('Effects', () => {
       pull(path:"someStringArray", value: "\\"${str}\\"")
     `)
 
-    const num = context.someNumberArray[0]
     expected = context.someNumberArray.filter((o) => !isEqual(o, context.someNumberArray[0]))
     assertExecutes({ someNumberArray: expected }, `
-      pull(path:"someNumberArray", value: "${num}")
+      pull(path:"someNumberArray", valuePath: "someNumberArray[0]")
     `)
 
     obj = { [chance.word()]: chance.word() }
@@ -298,6 +361,10 @@ describe('Effects', () => {
 
     assertRejects(`
       pull(path:"someNumberArray", value: "foo: 0")
+    `)
+
+    assertRejects(`
+      pull(path:"someNumberArray", value: 5, valuePath: "someNumberArray[0]")
     `)
   })
 
@@ -327,6 +394,10 @@ describe('Effects', () => {
       set(path:"someNewPath", value: "${num}")
     `)
 
+    assertExecutes({ someNewPath: context.someInt }, `
+      set(path:"someNewPath", valuePath: "someInt")
+    `)
+
     const obj = context.someObjectArray[0]
     const objJSON = JSON.stringify(obj).replace(/"/g, '\\"')
     assertExecutes({ someNewPath: obj }, `
@@ -344,8 +415,16 @@ describe('Effects', () => {
       subtract(path:"someInt", value: ${int})
     `)
 
+    assertExecutes({ someFloat: context.someFloat - context.someInt }, `
+      subtract(path:"someFloat", valuePath: "someInt")
+    `)
+
     assertRejects(`
       subtract(path:"someString", value: ${int})
+    `)
+
+    assertRejects(`
+      subtract(path:"Int", value: ${int}, valuePath: "someInt")
     `)
   })
 

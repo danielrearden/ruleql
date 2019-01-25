@@ -10,13 +10,16 @@ import {
   ObjectTypeDefinitionNode,
   OperationDefinitionNode,
 } from 'graphql'
+import * as _ from 'lodash'
+
 import { getFieldDef } from 'graphql/execution/execute'
 import { getArgumentValues } from 'graphql/execution/values'
+import { ExecutionContext, Rule } from '../rule-engine/rules'
 import scalars from './scalars'
 import { validationRules } from './validation-rules'
 
 export interface BaseExecutorResolverMap {
-  [key: string]: (args: { [key: string]: any }, context: any) => any
+  [key: string]: (args: { [key: string]: any }, context: ExecutionContext) => any
 }
 
 export type SchemaBuilderFunc = (fields: string) => string
@@ -71,16 +74,16 @@ export default abstract class BaseExecutor {
    * Parses query string into document and returns node representing document's query operation
    */
   protected getDocumentOperationNode (source: string): OperationDefinitionNode {
-  const document = parse(source, { noLocation: true })
+    const document = parse(source, { noLocation: true })
 
-  this.assertValidDocument(document)
+    this.assertValidDocument(document)
 
-  const queryNode = document.definitions.find((def) => (def as OperationDefinitionNode).operation === 'query')
-  if (!queryNode) {
-    throw new Error('Invalid document. Only queries are supported.')
+    const queryNode = document.definitions.find((def) => (def as OperationDefinitionNode).operation === 'query')
+    if (!queryNode) {
+      throw new Error('Invalid document. Only queries are supported.')
+    }
+    return queryNode as OperationDefinitionNode
   }
-  return queryNode as OperationDefinitionNode
-}
 
   /**
    * Asserts the provided document is valid

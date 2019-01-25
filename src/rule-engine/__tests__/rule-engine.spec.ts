@@ -1,5 +1,6 @@
 import { Chance } from 'chance'
-import RuleEngine, { RuleArray } from '../rule-engine'
+import RuleEngine from '../rule-engine'
+import { RuleArray } from '../rules'
 
 const chance = new Chance()
 const getInt = () => chance.integer({min: 1, max: 100})

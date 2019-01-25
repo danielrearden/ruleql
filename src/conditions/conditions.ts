@@ -1,8 +1,9 @@
 import * as _ from 'lodash'
 import * as inspect from 'util-inspect'
+import { ExecutionContext } from '../rule-engine/rules'
 
 export interface ConditionResolverMap {
-  [key: string]: (args: { [key: string]: any }, context: any) => Promise<boolean> | boolean
+  [key: string]: (args: { [key: string]: any }, context: ExecutionContext) => Promise<boolean> | boolean
 }
 
 export const defaultConditionFields: string = `
@@ -72,10 +73,10 @@ export const defaultConditionResolvers: ConditionResolverMap = {
   closeTo: ({ path, value, valuePath, precision }, context): boolean => {
     const actualRaw = _.get(context, path)
     const actual = Number(actualRaw)
-    const expected = getExpectedValue(value, valuePath, context)
+    const val = getValue(value, valuePath, context)
 
     const pow = Math.pow(10, precision + 1)
-    const delta = Math.abs(expected - actual)
+    const delta = Math.abs(val - actual)
     const maxDelta = Math.pow(10, -precision) / 2
 
     return Boolean((Math.round(delta * pow) / pow) <= maxDelta)
@@ -83,94 +84,64 @@ export const defaultConditionResolvers: ConditionResolverMap = {
   equalsNumber: ({ path, value, valuePath }, context): boolean => {
     const actualRaw = _.get(context, path)
     const actual = Number(actualRaw)
-    const expected = getExpectedValue(value, valuePath, context)
+    const val = getValue(value, valuePath, context)
 
-    return _.isEqual(actual, expected)
+    return _.isEqual(actual, val)
   },
   equalsObject: ({ path, value, valuePath }, context): boolean => {
-    assertSingleValue(value, valuePath)
-
+    const val = getParsedValue(value, valuePath, context)
     const actual = _.get(context, path)
-    if (!_.isUndefined(valuePath)) {
-      const valueFromPath = _.get(context, valuePath)
-      return _.isEqual(actual, valueFromPath)
-    }
 
-    let expected = null
-
-    try {
-      expected = JSON.parse(value)
-    } catch (error) {
-      throw new TypeError(
-        `Invalid JSON. Did you remember to escape double quotes? Received: ${inspect(value)}`,
-      )
-    }
-
-    return _.isEqual(actual, expected)
+    return _.isEqual(actual, val)
   },
   equalsString: ({ path, value, valuePath }, context): boolean => {
     const actualRaw = _.get(context, path)
     const actual = String(actualRaw)
-    const expected = getExpectedValue(value, valuePath, context)
+    const val = getValue(value, valuePath, context)
 
-    return _.isEqual(actual, expected)
+    return _.isEqual(actual, val)
   },
   greaterThan: ({ path, value, valuePath }, context): boolean => {
     const actualRaw = _.get(context, path)
     const actual = Number(actualRaw)
-    const expected = getExpectedValue(value, valuePath, context)
+    const val = getValue(value, valuePath, context)
 
-    return actual > expected
+    return actual > val
   },
   greaterThanOrEqual: ({ path, value, valuePath }, context): boolean => {
     const actualRaw = _.get(context, path)
     const actual = Number(actualRaw)
-    const expected = getExpectedValue(value, valuePath, context)
+    const val = getValue(value, valuePath, context)
 
-    return actual >= expected
+    return actual >= val
   },
   includesFloat: ({ path, value, valuePath }, context): boolean => {
     const actual = _.get(context, path)
-    const expected = getExpectedValue(value, valuePath, context)
+    const val = getValue(value, valuePath, context)
     if (!_.isArray(actual)) {
       return false
     }
 
-    return actual.find((element) => element === expected)
+    return actual.find((element) => element === val)
   },
   includesObject: ({ path, value, valuePath }, context): boolean => {
-    assertSingleValue(value, valuePath)
-
+    const val = getParsedValue(value, valuePath, context)
     const actual = _.get(context, path)
-    if (!_.isUndefined(valuePath)) {
-      const valueFromPath = _.get(context, valuePath)
-      return !!_.find(actual, valueFromPath)
-    }
 
     if (!_.isArray(actual)) {
       return false
     }
 
-    let expected = null
-
-    try {
-      expected = JSON.parse(value)
-    } catch (error) {
-      throw new TypeError(
-        `Invalid JSON. Did you remember to escape double quotes? Received: ${inspect(value)}`,
-      )
-    }
-
-    return !!_.find(actual, expected)
+    return !!_.find(actual, val)
   },
   includesString: ({ path, value, valuePath }, context): boolean => {
     const actual = _.get(context, path)
-    const expected = getExpectedValue(value, valuePath, context)
+    const val = getValue(value, valuePath, context)
     if (!_.isArray(actual)) {
       return false
     }
 
-    return actual.find((element) => element === expected)
+    return actual.find((element) => element === val)
   },
   isFalsy: ({ path }, context): boolean => {
     const actual = _.get(context, path)
@@ -195,50 +166,35 @@ export const defaultConditionResolvers: ConditionResolverMap = {
   lessThan: ({ path, value, valuePath }, context): boolean => {
     const actualRaw = _.get(context, path)
     const actual = Number(actualRaw)
-    const expected = getExpectedValue(value, valuePath, context)
+    const val = getValue(value, valuePath, context)
 
-    return actual < expected
+    return actual < val
   },
   lessThanOrEqual: ({ path, value, valuePath }, context): boolean => {
     const actualRaw = _.get(context, path)
     const actual = Number(actualRaw)
-    const expected = getExpectedValue(value, valuePath, context)
+    const val = getValue(value, valuePath, context)
 
-    return actual <= expected
+    return actual <= val
   },
   matchesObject: ({ path, value, valuePath }, context): boolean => {
-    assertSingleValue(value, valuePath)
-
+    const val = getParsedValue(value, valuePath, context)
     const actual = _.get(context, path)
-    if (!_.isUndefined(valuePath)) {
-      const valueFromPath = _.get(context, valuePath)
-      return _.isMatch(actual, valueFromPath)
-    }
 
-    let expected = null
-
-    try {
-      expected = JSON.parse(value)
-    } catch (error) {
-      throw new TypeError(
-        `Invalid JSON. Did you remember to escape double quotes? Received: ${inspect(value)}`,
-      )
-    }
-
-    return _.isMatch(actual, expected)
+    return _.isMatch(actual, val)
   },
   matchesRegex: ({ path, value, valuePath, flags }, context): boolean => {
     const actualRaw = _.get(context, path)
     const actual = String(actualRaw)
-    const expected = getExpectedValue(value, valuePath, context)
-    const regex = RegExp(expected, flags)
+    const val = getValue(value, valuePath, context)
+    const regex = RegExp(val, flags)
 
     return regex.test(actual)
   },
   never: () => false,
 }
 
-function getExpectedValue (value: any, valuePath: string, context: any): any {
+function getValue (value: any, valuePath: string, context: ExecutionContext): any {
   assertSingleValue(value, valuePath)
   if (!_.isUndefined(value)) {
     return value
@@ -246,8 +202,29 @@ function getExpectedValue (value: any, valuePath: string, context: any): any {
   return _.get(context, valuePath)
 }
 
+function getParsedValue (value: any, valuePath: string, context: ExecutionContext): any {
+  assertSingleValue(value, valuePath)
+
+  let val
+
+  if (!_.isUndefined(valuePath)) {
+      val = _.get(context, valuePath)
+    } else {
+      try {
+        val = JSON.parse(value)
+      } catch (e) {
+        throw new TypeError(`Invalid JSON. Did you remember to escape double quotes? Received: ${inspect(value)}`)
+      }
+    }
+
+  return val
+}
+
 function assertSingleValue (value, valuePath) {
   if (!_.isUndefined(value) && !_.isUndefined(valuePath)) {
     throw new Error('Cannot provide both value and valuePath!')
+  }
+  if (_.isUndefined(value) && _.isUndefined(valuePath)) {
+    throw new Error('Must provide either value or valuePath')
   }
 }

@@ -6,6 +6,7 @@ import {
 import * as _ from 'lodash'
 
 import BaseExecutor from '../graphql/base-executor'
+import { ExecutionContext, Rule } from '../rule-engine/rules'
 import { defaultConditionFields, defaultConditionResolvers, ConditionResolverMap } from './conditions'
 
 export interface ConditionExecutorConfig {
@@ -48,7 +49,7 @@ export default class ConditionExecutor extends BaseExecutor {
    * Validates an array of condition sets and returns a Promise that resolves to
    * an array of booleans indicating whether each condition set was met
    */
-  public async executeAll (conditionsArray: string[], context: any): Promise<boolean[]> {
+  public async executeAll (rules: Rule[], context: ExecutionContext): Promise<boolean[]> {
     this.dataLoader = new DataLoader((keyInputs) => {
       return Promise.all(keyInputs.map(async ({ name, args }) => {
         const resolver = this.resolvers[name] || _.noop
@@ -56,7 +57,7 @@ export default class ConditionExecutor extends BaseExecutor {
         return Boolean(value)
       }))
     }, dataLoaderConfig)
-    return Promise.all(conditionsArray.map((conditions) => this.execute(conditions)))
+    return Promise.all(rules.map((rule) => this.execute(rule.conditions)))
   }
 
   /**

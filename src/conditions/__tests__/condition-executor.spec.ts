@@ -2,7 +2,8 @@ import ConditionExecutor from '../condition-executor'
 
 async function assertExecute (expected: boolean, conditions: string): Promise<void> {
   const executor = new ConditionExecutor()
-  const result = await executor.executeAll([conditions], {})
+  const rule = { conditions, effects: '' }
+  const result = await executor.executeAll([rule], {})
   expect(result).toEqual([expected])
 }
 
@@ -138,27 +139,34 @@ describe('ConditionExecutor', () => {
           }
         }
       }`
-      await executor.executeAll([conditions], {})
+      const rule = { conditions, effects: '' }
+      await executor.executeAll([rule], {})
       expect(resolvers.someCondition).toBeCalledTimes(1)
     })
 
     it('should execute multiple sets of conditions', async () => {
       const executor = new ConditionExecutor()
-      const conditionSet = [
-        `{
-          and {
-            always
-            never
-          }
-        }`,
-        `{
-          or {
-            always
-            never
-          }
-        }`,
+      const rules = [
+        {
+          conditions: `{
+            and {
+              always
+              never
+            }
+          }`,
+          effects: '',
+        },
+        {
+          conditions: `{
+            or {
+              always
+              never
+            }
+          }`,
+          effects: '',
+        },
       ]
-      const result = await executor.executeAll(conditionSet, {})
+      const result = await executor.executeAll(rules, {})
       expect(result).toEqual([false, true])
     })
   })

@@ -32,7 +32,8 @@ function assertExecutes (expected: boolean, field: string) {
     const executor = new ConditionExecutor()
     const ctx = Object.assign({}, context)
     const query = `{ ${field} }`
-    const result = await executor.executeAll([query], ctx)
+    const rule = { conditions: query, effects: '' }
+    const result = await executor.executeAll([rule], ctx)
     expect(result).toEqual([expected])
     expect(ctx).toEqual(context)
   })
@@ -43,7 +44,8 @@ function assertRejects (field: string) {
     const executor = new ConditionExecutor()
     const ctx = Object.assign({}, context)
     const query = `{ ${field} }`
-    await expect(executor.executeAll([query], ctx)).rejects.toBeDefined()
+    const rule = { conditions: query, effects: '' }
+    await expect(executor.executeAll([rule], ctx)).rejects.toBeDefined()
   })
 }
 
