@@ -75,7 +75,7 @@ export const defaultEffectFields: string = `
 
 export const defaultEffectResolvers: EffectsResolverMap = {
   add: ({ path, value, valuePath }, context): void => {
-    const initial = _.get(context, path)
+    const initial = _.result(context, path)
     const val = getValue(value, valuePath, context)
     if (!_.isNumber(initial)) {
       throw new TypeError(`Can't add because ${inspect(initial)} at ${path} is not a number`)
@@ -84,7 +84,7 @@ export const defaultEffectResolvers: EffectsResolverMap = {
     _.set(context, path, updated)
   },
   ceiling: ({ path, precision }, context): void => {
-    const initial = _.get(context, path)
+    const initial = _.result(context, path)
     if (!_.isNumber(initial)) {
       throw new TypeError(`Can't compute ceiling because ${inspect(initial)} at ${path} is not a number`)
     }
@@ -92,7 +92,7 @@ export const defaultEffectResolvers: EffectsResolverMap = {
     _.set(context, path, updated)
   },
   clamp: ({ path, lower, upper }, context): void => {
-    const initial = _.get(context, path)
+    const initial = _.result(context, path)
     if (!_.isNumber(initial)) {
       throw new TypeError(`Can't clamp because ${inspect(initial)} at ${path} is not a number`)
     }
@@ -101,7 +101,7 @@ export const defaultEffectResolvers: EffectsResolverMap = {
   },
   concat: ({ path, value, valuePath }, context): void => {
     const val = getParsedValue(value, valuePath, context)
-    let initial = _.get(context, path)
+    let initial = _.result(context, path)
     if (initial === undefined || initial === null) {
       initial = []
     }
@@ -114,7 +114,7 @@ export const defaultEffectResolvers: EffectsResolverMap = {
   },
   default: ({ path, value, valuePath }, context): void => {
     const val = getParsedValue(value, valuePath, context)
-    const existing = _.get(context, path)
+    const existing = _.result(context, path)
 
     if (existing !== undefined) {
       return
@@ -123,7 +123,7 @@ export const defaultEffectResolvers: EffectsResolverMap = {
     _.set(context, path, val)
   },
   divide: ({ path, value, valuePath }, context): void => {
-    const initial = _.get(context, path)
+    const initial = _.result(context, path)
     const val = getValue(value, valuePath, context)
     if (!_.isNumber(initial)) {
       throw new TypeError(`Can't divide because ${inspect(initial)} at ${path} is not a number`)
@@ -136,7 +136,7 @@ export const defaultEffectResolvers: EffectsResolverMap = {
   },
   filter: ({ path, value, valuePath }, context): void => {
     const val = getParsedValue(value, valuePath, context)
-    const initial = _.get(context, path)
+    const initial = _.result(context, path)
 
     if (!Array.isArray(initial)) {
       return
@@ -148,7 +148,7 @@ export const defaultEffectResolvers: EffectsResolverMap = {
     _.set(context, path, updated)
   },
   floor: ({ path, precision }, context): void => {
-    const initial = _.get(context, path)
+    const initial = _.result(context, path)
     if (!_.isNumber(initial)) {
       throw new TypeError(`Can't compute floor because ${inspect(initial)} at ${path} is not a number`)
     }
@@ -156,7 +156,7 @@ export const defaultEffectResolvers: EffectsResolverMap = {
     _.set(context, path, updated)
   },
   max: ({ path, value, valuePath }, context): void => {
-    const initial = _.get(context, path)
+    const initial = _.result(context, path)
     const val = getValue(value, valuePath, context)
     if (!_.isNumber(initial)) {
       throw new TypeError(`Can't compute max because ${inspect(initial)} at ${path} is not a number`)
@@ -166,7 +166,7 @@ export const defaultEffectResolvers: EffectsResolverMap = {
   },
   merge: ({ path, value, valuePath }, context): void => {
     const val = getParsedValue(value, valuePath, context)
-    const initial = _.get(context, path)
+    const initial = _.result(context, path)
 
     if (!_.isObject(val) || (!_.isNil(initial) && !_.isObject(initial))) {
       throw new TypeError('Can only merge two objects.')
@@ -175,7 +175,7 @@ export const defaultEffectResolvers: EffectsResolverMap = {
     _.set(context, path, updated)
   },
   min: ({ path, value, valuePath }, context): void => {
-    const initial = _.get(context, path)
+    const initial = _.result(context, path)
     const val = getValue(value, valuePath, context)
     if (!_.isNumber(initial)) {
       throw new TypeError(`Can't compute min because ${inspect(initial)} at ${path} is not a number`)
@@ -184,7 +184,7 @@ export const defaultEffectResolvers: EffectsResolverMap = {
     _.set(context, path, updated)
   },
   multiply: ({ path, value, valuePath }, context): void => {
-    const initial = _.get(context, path)
+    const initial = _.result(context, path)
     const val = getValue(value, valuePath, context)
     if (!_.isNumber(initial)) {
       throw new TypeError(`Can't compute ceiling because ${inspect(initial)} at ${path} is not a number`)
@@ -193,7 +193,7 @@ export const defaultEffectResolvers: EffectsResolverMap = {
     _.set(context, path, updated)
   },
   pull: ({ path, value, valuePath }, context): void => {
-    const initial = _.get(context, path)
+    const initial = _.result(context, path)
     const val = getParsedValue(value, valuePath, context)
 
     if (!Array.isArray(initial)) {
@@ -206,7 +206,7 @@ export const defaultEffectResolvers: EffectsResolverMap = {
     _.set(context, path, updated)
   },
   round: ({ path, precision }, context): void => {
-    const initial = _.get(context, path)
+    const initial = _.result(context, path)
     if (!_.isNumber(initial)) {
       throw new TypeError(`Can't round because ${inspect(initial)} at ${path} is not a number`)
     }
@@ -218,7 +218,7 @@ export const defaultEffectResolvers: EffectsResolverMap = {
     _.set(context, path, val)
   },
   subtract: ({ path, value, valuePath }, context): void => {
-    const initial = _.get(context, path)
+    const initial = _.result(context, path)
     const val = getValue(value, valuePath, context)
     if (!_.isNumber(initial)) {
       throw new TypeError(`Can't subtract because ${inspect(initial)} at ${path} is not a number`)
@@ -236,7 +236,7 @@ function getValue (value: any, valuePath: string, context: ExecutionContext): an
   if (!_.isUndefined(value)) {
     return value
   }
-  return _.get(context, valuePath)
+  return _.result(context, valuePath)
 }
 
 function getParsedValue (value: any, valuePath: string, context: ExecutionContext): any {
@@ -245,7 +245,7 @@ function getParsedValue (value: any, valuePath: string, context: ExecutionContex
   let val
 
   if (!_.isUndefined(valuePath)) {
-      val = _.get(context, valuePath)
+      val = _.result(context, valuePath)
     } else {
       try {
         val = JSON.parse(value)

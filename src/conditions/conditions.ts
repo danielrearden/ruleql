@@ -71,7 +71,7 @@ export const defaultConditionFields: string = `
 export const defaultConditionResolvers: ConditionResolverMap = {
   always: () => true,
   closeTo: ({ path, value, valuePath, precision }, context): boolean => {
-    const actualRaw = _.get(context, path)
+    const actualRaw = _.result(context, path)
     const actual = Number(actualRaw)
     const val = getValue(value, valuePath, context)
 
@@ -82,7 +82,7 @@ export const defaultConditionResolvers: ConditionResolverMap = {
     return Boolean((Math.round(delta * pow) / pow) <= maxDelta)
   },
   equalsNumber: ({ path, value, valuePath }, context): boolean => {
-    const actualRaw = _.get(context, path)
+    const actualRaw = _.result(context, path)
     const actual = Number(actualRaw)
     const val = getValue(value, valuePath, context)
 
@@ -90,33 +90,33 @@ export const defaultConditionResolvers: ConditionResolverMap = {
   },
   equalsObject: ({ path, value, valuePath }, context): boolean => {
     const val = getParsedValue(value, valuePath, context)
-    const actual = _.get(context, path)
+    const actual = _.result(context, path)
 
     return _.isEqual(actual, val)
   },
   equalsString: ({ path, value, valuePath }, context): boolean => {
-    const actualRaw = _.get(context, path)
+    const actualRaw = _.result(context, path)
     const actual = String(actualRaw)
     const val = getValue(value, valuePath, context)
 
     return _.isEqual(actual, val)
   },
   greaterThan: ({ path, value, valuePath }, context): boolean => {
-    const actualRaw = _.get(context, path)
+    const actualRaw = _.result(context, path)
     const actual = Number(actualRaw)
     const val = getValue(value, valuePath, context)
 
     return actual > val
   },
   greaterThanOrEqual: ({ path, value, valuePath }, context): boolean => {
-    const actualRaw = _.get(context, path)
+    const actualRaw = _.result(context, path)
     const actual = Number(actualRaw)
     const val = getValue(value, valuePath, context)
 
     return actual >= val
   },
   includesFloat: ({ path, value, valuePath }, context): boolean => {
-    const actual = _.get(context, path)
+    const actual = _.result(context, path)
     const val = getValue(value, valuePath, context)
     if (!_.isArray(actual)) {
       return false
@@ -126,7 +126,7 @@ export const defaultConditionResolvers: ConditionResolverMap = {
   },
   includesObject: ({ path, value, valuePath }, context): boolean => {
     const val = getParsedValue(value, valuePath, context)
-    const actual = _.get(context, path)
+    const actual = _.result(context, path)
 
     if (!_.isArray(actual)) {
       return false
@@ -135,7 +135,7 @@ export const defaultConditionResolvers: ConditionResolverMap = {
     return !!_.find(actual, val)
   },
   includesString: ({ path, value, valuePath }, context): boolean => {
-    const actual = _.get(context, path)
+    const actual = _.result(context, path)
     const val = getValue(value, valuePath, context)
     if (!_.isArray(actual)) {
       return false
@@ -144,34 +144,34 @@ export const defaultConditionResolvers: ConditionResolverMap = {
     return actual.find((element) => element === val)
   },
   isFalsy: ({ path }, context): boolean => {
-    const actual = _.get(context, path)
+    const actual = _.result(context, path)
 
     return !!!actual
   },
   isNull: ({ path }, context): boolean => {
-    const actual = _.get(context, path)
+    const actual = _.result(context, path)
 
     return actual === null
   },
   isTruthy: ({ path }, context): boolean => {
-    const actual = _.get(context, path)
+    const actual = _.result(context, path)
 
     return !!actual
   },
   isUndefined: ({ path }, context): boolean => {
-    const actual = _.get(context, path)
+    const actual = _.result(context, path)
 
     return actual === undefined
   },
   lessThan: ({ path, value, valuePath }, context): boolean => {
-    const actualRaw = _.get(context, path)
+    const actualRaw = _.result(context, path)
     const actual = Number(actualRaw)
     const val = getValue(value, valuePath, context)
 
     return actual < val
   },
   lessThanOrEqual: ({ path, value, valuePath }, context): boolean => {
-    const actualRaw = _.get(context, path)
+    const actualRaw = _.result(context, path)
     const actual = Number(actualRaw)
     const val = getValue(value, valuePath, context)
 
@@ -179,12 +179,12 @@ export const defaultConditionResolvers: ConditionResolverMap = {
   },
   matchesObject: ({ path, value, valuePath }, context): boolean => {
     const val = getParsedValue(value, valuePath, context)
-    const actual = _.get(context, path)
+    const actual = _.result(context, path)
 
     return _.isMatch(actual, val)
   },
   matchesRegex: ({ path, value, valuePath, flags }, context): boolean => {
-    const actualRaw = _.get(context, path)
+    const actualRaw = _.result(context, path)
     const actual = String(actualRaw)
     const val = getValue(value, valuePath, context)
     const regex = RegExp(val, flags)
@@ -199,7 +199,7 @@ function getValue (value: any, valuePath: string, context: ExecutionContext): an
   if (!_.isUndefined(value)) {
     return value
   }
-  return _.get(context, valuePath)
+  return _.result(context, valuePath)
 }
 
 function getParsedValue (value: any, valuePath: string, context: ExecutionContext): any {
@@ -208,7 +208,7 @@ function getParsedValue (value: any, valuePath: string, context: ExecutionContex
   let val
 
   if (!_.isUndefined(valuePath)) {
-      val = _.get(context, valuePath)
+      val = _.result(context, valuePath)
     } else {
       try {
         val = JSON.parse(value)
